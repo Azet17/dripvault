@@ -202,6 +202,11 @@ loadHistory();
 setInterval(loadHistory, 10000); // live-ish refresh while demoing
 
 function v(id){ return document.getElementById(id).value.trim(); }
+
+// demo autostep: ?autostep=quote|plan triggers the buttons after load (for scripted demos)
+const step = new URLSearchParams(location.search).get("autostep");
+if (step === "quote") setTimeout(() => document.getElementById("btnQuote").click(), 1500);
+if (step === "plan")  setTimeout(() => document.getElementById("btnPlan").click(), 1500);
 fillChains();
 </script>
 </body>
