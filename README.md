@@ -25,11 +25,10 @@ Built for **NEAR HACKATHON** (2026-11-01 → 2026-11-14), track `defi` (Unstoppa
 
 ## What is NOT built yet
 
-- **Wet-run deposit signing** — the scheduler's dry-run path is complete; signing the actual
-  deposit transfer with a NEAR account key is the remaining piece (it refuses to run wet
-  without credentials, exit code 6).
-- **Automated interval loop** (`npm run drip` every N hours) — the per-leg scheduler exists;
-  the cron-style wrapper does not.
+- **Wet-run deposit path** — implemented (NEAR CLI signing per Opsi A: `near send` to the
+  1Click depositAddress, tx hash parsed, `/v0/deposit/submit` accelerator, then status
+  polling to a terminal state). End-to-end wet run pending a funded mainnet dev account.
+- **Interval loop** — `--interval 24` loops drips every 24h (`--max-legs N` caps it).
 - **Web UI**. Not implemented.
 - Stretch: a NEAR contract owning the vault via **Chain Signatures**. Not started.
 
@@ -101,6 +100,14 @@ cd dripvault
 
 Requires network access to `1click.chaindefuser.com`. No API key needed for quotes.
 
+6. **See the interval loop execute two capped dry legs:**
+   `python3 scripts/scheduler.py --from eth --token usdc --amount 5 --to near --asset near --interval 0.0003 --max-legs 2`
+   → *See* `--- drip leg 1 ---` … `Next drip in 0.0003h` … `--- drip leg 2 ---` …
+   `loop: max_legs=2 reached, stopping` — two legs appended to `history.json`.
+   (0.0003h ≈ 1 second, used here so the demo finishes; real schedules use e.g. `--interval 24`.)
+
+Requires network access to `1click.chaindefuser.com`. No API key needed for quotes.
+
 ## Exit codes
 
 | Code | Meaning |
@@ -120,8 +127,10 @@ Requires network access to `1click.chaindefuser.com`. No API key needed for quot
 - [x] Schedule planner (pure, no API)
 - [x] Per-leg scheduler with dry-run state machine (`scripts/scheduler.py`)
 - [x] Status polling logic (`/v0/status?depositAddress=...`, PENDING_DEPOSIT→terminal states)
-- [ ] Wet-run deposit signing (needs NEAR account key; refuses without, exit 6)
-- [ ] Interval loop wrapper (`npm run drip` every N hours)
+- [x] Wet-run deposit signing (NEAR CLI `near send`, Opsi A) — tx hash → explorer link →
+      `/v0/deposit/submit` accelerator → poll to terminal state
+- [x] Interval loop (`--interval 24 --max-legs N`)
+- [ ] End-to-end wet run on mainnet (awaits funded dedicated dev account)
 - [ ] Web UI (deposit / schedule / history)
 - [ ] Stretch: contract-owned vault via Chain Signatures
 

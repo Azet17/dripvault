@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.error
@@ -74,6 +75,27 @@ def get_status(deposit_address: str, timeout: int = 15):
             return False, {"statusCode": e.code}
     except Exception as e:
         return False, {"error": str(e)[:200]}
+
+
+def _near_env() -> dict:
+    """Environment for near-cli subprocess calls (adds ~/.npm-global/bin)."""
+    env = dict(os.environ)
+    env["PATH"] = os.path.expanduser("~/.npm-global/bin:") + env["PATH"]
+    return env
+
+
+def submit_deposit_accelerator(deposit_address: str, tx_hash: str) -> None:
+    """POST /v0/deposit/submit — best-effort accelerator per docs; never fatal."""
+    body = json.dumps({"depositAddress": deposit_address, "txHash": tx_hash}).encode()
+    req = urllib.request.Request(
+        "https://1click.chaindefuser.com/v0/deposit/submit", data=body,
+        headers={"user-agent": "dripvault/0.1", "content-type": "application/json"},
+        method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            print(f"  accelerator: {r.status}")
+    except Exception as e:
+        print(f"  accelerator skipped ({str(e)[:80]})")
 
 
 def load_history() -> list:
@@ -184,9 +206,10 @@ def execute_drip(cfg: dict, dry: bool) -> int:
         print("[dry-run] leg saved to history.json — nothing executed")
         return 0
 
-    # ---- wet run ----
+    # ---- wet run: Opsi A, NEAR CLI signing (near send via subprocess) ----
     account = os.environ.get("NEAR_MAIN_ACCOUNT")
     key = os.environ.get("NEAR_MAIN_KEY")
+    network = os.environ.get("NEAR_NETWORK", "mainnet")
     if not account or not key:
         print("WET RUN REFUSED: set NEAR_MAIN_ACCOUNT + NEAR_MAIN_KEY in .env "
               "(use a dedicated dev account with tiny amounts)", file=sys.stderr)
@@ -200,11 +223,98 @@ def execute_drip(cfg: dict, dry: bool) -> int:
         update_leg(idx, status="ERROR_NO_DEPOSIT_ADDRESS")
         return 4
 
-    # Sign & send the deposit transfer (NEAR account key). Implementation lands
-    # with the wet-run integration task; polling logic below is already correct.
-    print("WET RUN: deposit signing not yet implemented — see Status in README.")
-    update_leg(idx, status="WET_RUN_NOT_IMPLEMENTED")
-    return 6
+    deposit_addr = leg["deposit_address"]
+    # wet quotes return amounts in the ORIGIN asset's smallest unit; NEAR CLI
+    # transfer needs the same. For a NEAR-origin deposit this is yoctonear.
+    amount_units = leg["amount_in"]  # string of smallest units
+
+    # key from .env must be importable into the CLI keystore (never leaves disk)
+    ks_dir = Path.home() / ".near-credentials" / network
+    ks_file = ks_dir / f"{account}.json"
+    if not ks_file.exists():
+        ks_dir.mkdir(parents=True, exist_ok=True)
+        # import the .env key into the CLI keystore (never leaves disk)
+        print(f"WET RUN: importing credentials to {ks_file} (from .env)")
+        rc = subprocess.run(
+            ["near", "add-credentials", account, "--networkId", network],
+            capture_output=True, text=True, input=key, env=_near_env(), timeout=60)
+        if rc.returncode != 0 or not ks_file.exists():
+            print(f"WET RUN ERROR: credential import failed: {rc.stderr[:200]}",
+                  file=sys.stderr)
+            update_leg(idx, status="ERROR_CREDENTIAL_IMPORT")
+            return 6
+
+    near_cli = os.environ.get("NEAR_CLI", "near")
+    amount_near = str(int(amount_units) / 10 ** 24)  # NEAR-origin: 24 decimals
+    print(f"WET RUN: near send {account} -> {deposit_addr[:20]}… "
+          f"({amount_near} NEAR, network {network})")
+    try:
+        rc = subprocess.run(
+            [near_cli, "send", account, deposit_addr, amount_near,
+             "--networkId", network],
+            capture_output=True, text=True, env=_near_env(), timeout=180)
+    except subprocess.TimeoutExpired:
+        update_leg(idx, status="ERROR_TX_TIMEOUT")
+        return 5
+    if rc.returncode != 0:
+        print(f"WET RUN ERROR: near send failed: {rc.stderr[:300]}", file=sys.stderr)
+        update_leg(idx, status="ERROR_TX_FAILED")
+        return 4
+
+    tx_hash = None
+    for line in rc.stdout.splitlines():
+        if "Transaction Id" in line:
+            tx_hash = line.split()[-1]
+            break
+    if not tx_hash:
+        print("WET RUN ERROR: no Transaction Id in near output", file=sys.stderr)
+        update_leg(idx, status="ERROR_TX_HASH_NOT_FOUND")
+        return 4
+
+    explorer = f"https://nearblocks.io/txns/{tx_hash}"
+    print(f"WET RUN: deposit tx {tx_hash} → {explorer}")
+    update_leg(idx, tx_hash=tx_hash, explorer=explorer, status="KNOWN_DEPOSIT_TX")
+
+    # report our deposit tx to 1Click (optional accelerator, best-effort)
+    submit_deposit_accelerator(deposit_addr, tx_hash)
+
+    # poll to a terminal state
+    final = poll_status(deposit_addr, idx)
+    if final == "SUCCESS":
+        ok, resp = get_status(deposit_addr)
+        swaps = resp if isinstance(resp, list) else (resp.get("swapDetails") or [])
+        if swaps and isinstance(swaps[0], dict):
+            out_amt = swaps[0].get("amountOut") or swaps[0].get("swapDetails", {}).get("amountOut")
+            if out_amt:
+                update_leg(idx, amount_out_actual=out_amt)
+        print(f"[SUCCESS] leg complete. See {explorer}")
+        return 0
+    if final == "REFUNDED":
+        print(f"[REFUNDED] funds returned by 1Click. See {explorer}")
+        return 3
+    if final == "FAILED":
+        print(f"[FAILED] leg failed. See {explorer}")
+        return 4
+    if final in ("INCOMPLETE_DEPOSIT",):
+        print(f"[INCOMPLETE_DEPOSIT] manual follow-up needed. See {explorer}")
+        return 5
+    print(f"[TIMEOUT] no terminal state within {POLL_TIMEOUT}s. See {explorer}")
+    return 5
+
+
+def run_loop(cfg: dict, interval_hours: float, dry: bool, max_legs: int = 0) -> int:
+    """Run execute_drip on an interval. max_legs>0 caps the run (CI/demo friendly)."""
+    n = 0
+    rc = 0
+    while True:
+        print(f"--- drip leg {n + 1} ---")
+        rc = execute_drip(cfg, dry=dry)
+        n += 1
+        if max_legs and n >= max_legs:
+            print(f"loop: max_legs={max_legs} reached, stopping")
+            return rc
+        print(f"Next drip in {interval_hours}h")
+        time.sleep(interval_hours * 3600)
 
 
 def main() -> int:
@@ -218,8 +328,15 @@ def main() -> int:
     ap.add_argument("--max-slippage", dest="max_slippage", type=float, default=1.0)
     ap.add_argument("--dry", dest="dry", action="store_true", default=True)
     ap.add_argument("--wet", dest="dry", action="store_false")
+    ap.add_argument("--interval", type=float, default=0,
+                    help="if >0, loop forever with this many hours between drips")
+    ap.add_argument("--max-legs", type=int, default=0,
+                    help="cap loop iterations (0 = unlimited; useful for demos)")
     args = ap.parse_args()
-    return execute_drip(vars(args), dry=args.dry)
+    cfg = vars(args)
+    if args.interval > 0:
+        return run_loop(cfg, args.interval, args.dry, args.max_legs)
+    return execute_drip(cfg, dry=args.dry)
 
 
 if __name__ == "__main__":
