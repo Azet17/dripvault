@@ -6,7 +6,9 @@ Cross-chain dollar-cost-averaging (DCA) on **NEAR Intents (1Click API)** — cur
 Planned final shape: deposit USDC from any supported chain, pick a target asset (BTC, ETH or
 NEAR) and a schedule. On every interval the scheduler requests a quote from the 1Click API,
 rejects quotes that beat the user's slippage limit, and executes the swap so the asset lands
-in the user's own address on the target chain.
+in the user's own address on the target chain. Self-custodial by design: the signing key
+stays on the user's machine (in their own `.env`, never in this repo) and funds rest in the
+user's own account between drips.
 
 Built for **NEAR HACKATHON** (2026-11-01 → 2026-11-14), track `defi` (Unstoppable DeFi).
 
@@ -69,10 +71,12 @@ cd dripvault
    → *See* `REJECTED: slippage limit <= 0 (slippage guard demonstration)` and exit code `2`
    (`echo $?` prints `2`).
 
-3. **See a real no-liquidity rejection:**
+3. **See a real API error surfaced honestly (example output — may differ by day):**
    `python3 scripts/quote.py --from base --token usdc --amount 25 --to btc --asset btc`
-   → *See* `QUOTE ERROR: 400 ... "No liquidity available"` and exit code `1` — the API itself
-   refuses this small-cap route; DripVault surfaces the failure instead of hiding it.
+   → *Captured 2026-11-06:* `QUOTE ERROR: 400 ... "No liquidity available"`, exit code `1`.
+   The exact message depends on that day's liquidity — if the route has liquidity when you
+   run it, you will get a normal quote (exit code `0`) instead; that is also a correct
+   outcome. Error handling is separately exercised by step 2 (deterministic reject path).
 
 4. **See the schedule planner:**
    `python3 scripts/plan.py --total 300 --drips 10 --interval 24h --slippage 1.0`
