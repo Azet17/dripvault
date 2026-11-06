@@ -128,7 +128,9 @@ function fillChains(){
     const sel = document.getElementById(id);
     sel.innerHTML = CHAINS.map(c=>`<option>${c}</option>`).join("");
   }
-  document.getElementById("to").value = "near";
+  // sensible defaults for the demo path
+  if (CHAINS.includes("eth")) document.getElementById("from").value = "eth";
+  if (CHAINS.includes("near")) document.getElementById("to").value = "near";
 }
 fetch("/api/chains").then(r=>r.ok?r.json():null).then(d=>{
   if (d && d.chains && d.chains.length){ CHAINS = d.chains; fillChains(); }
