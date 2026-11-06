@@ -19,6 +19,21 @@ def parse_interval(s: str) -> timedelta:
             "w": timedelta(weeks=n)}[unit]
 
 
+def build_schedule(total: float, drips: int, interval: str = "24h",
+                   slippage: float = 1.0, start=None) -> dict:
+    """Programmatic schedule (used by the UI server's /api/plan)."""
+    start = (start or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    iv = parse_interval(interval)
+    per = total / drips
+    rows = []
+    for i in range(drips):
+        t = start + iv * i
+        rows.append({"n": i + 1, "at": t.isoformat(timespec="seconds"),
+                     "amount": round(per, 6), "maxSlippagePct": slippage})
+    return {"total": total, "drips": drips, "interval": interval,
+            "perDrip": round(per, 6), "maxSlippagePct": slippage, "schedule": rows}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="DripVault schedule planner")
     ap.add_argument("--total", type=float, required=True, help="total budget, human units")

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DripVault — Cross-chain DCA on NEAR Intents</title>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#121722; --panel2:#0f141d; --line:#1f2937;
+    --text:#e6edf3; --dim:#8b949e; --green:#3fb950; --red:#f85149;
+    --amber:#d29922; --blue:#58a6ff; --accent:#00d18f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:24px}
+  header{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+  h1{font-size:20px;letter-spacing:.5px}
+  h1 .drop{color:var(--accent)}
+  .sub{color:var(--dim);font-size:12px;margin-bottom:20px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .panel h2{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:12px}
+  label{display:block;font-size:11px;color:var(--dim);margin:8px 0 3px}
+  input,select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+    color:var(--text);padding:8px 10px;font:inherit;font-size:13px}
+  input:focus,select:focus{outline:none;border-color:var(--accent)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  button{margin-top:14px;width:100%;background:var(--accent);border:none;color:#04140d;
+    font:inherit;font-weight:700;padding:10px;border-radius:6px;cursor:pointer}
+  button:hover{filter:brightness(1.1)}
+  button.ghost{background:transparent;color:var(--blue);border:1px solid var(--line)}
+  .result{margin-top:12px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+    padding:10px;font-size:12px;white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto;display:none}
+  .result.err{color:var(--red)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{color:var(--dim);text-align:left;font-weight:400;padding:6px 8px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+  td{padding:7px 8px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+  .b-SUCCESS{background:rgba(63,185,80,.15);color:var(--green)}
+  .b-DRY_RUN{background:rgba(88,166,255,.15);color:var(--blue)}
+  .b-REFUNDED{background:rgba(210,153,34,.15);color:var(--amber)}
+  .b-FAILED{background:rgba(248,81,73,.15);color:var(--red)}
+  .b-WET_RUN_REFUSED_NO_CREDENTIALS,.b-ERROR_TX_FAILED,.b-TIMEOUT,.b-INCOMPLETE_DEPOSIT{background:rgba(248,81,73,.15);color:var(--red)}
+  .b-PENDING_DEPOSIT,.b-KNOWN_DEPOSIT_TX,.b-PROCESSING{background:rgba(210,153,34,.15);color:var(--amber)}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .empty{color:var(--dim);font-size:12px;padding:14px 0;text-align:center}
+  .mono-dim{color:var(--dim)}
+  .tag{font-size:10px;color:var(--accent);border:1px solid rgba(0,209,143,.35);border-radius:4px;padding:1px 6px;margin-left:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="drop">💧</span> DripVault</h1>
+  <span class="tag">DRY-RUN SAFE</span>
+</header>
+<div class="sub">Cross-chain DCA on NEAR Intents (1Click API) · quotes are live · nothing executes without explicit wet mode + your keys</div>
+
+<div class="grid">
+  <!-- ============ DEPOSIT FORM ============ -->
+  <div class="panel">
+    <h2>1 · Deposit Form</h2>
+    <div class="row3">
+      <div><label>From chain</label><select id="from"></select></div>
+      <div><label>Token</label><input id="token" value="usdc"></div>
+      <div><label>Amount</label><input id="amount" value="10" type="number" min="0" step="any"></div>
+    </div>
+    <div class="row3">
+      <div><label>To chain</label><select id="to"></select></div>
+      <div><label>Target asset</label><input id="asset" value="near"></div>
+      <div><label>Max slippage %</label><input id="slippage" value="1.0" type="number" min="0" step="0.1"></div>
+    </div>
+    <div class="row">
+      <div><label>Total budget</label><input id="total" value="100" type="number" min="0" step="any"></div>
+      <div><label>Drips</label><input id="drips" value="10" type="number" min="1" step="1"></div>
+    </div>
+    <div class="row">
+      <div><label>Interval</label><select id="interval">
+        <option value="60m">hourly</option><option value="24h" selected>daily</option>
+        <option value="7d">weekly</option><option value="30d">monthly</option>
+      </select></div>
+      <div><label>&nbsp;</label><button class="ghost" id="btnPlan">Preview schedule</button></div>
+    </div>
+    <button id="btnQuote">Get live quote (dry-run)</button>
+    <div class="result" id="quoteOut"></div>
+    <div class="result" id="planOut"></div>
+  </div>
+
+  <!-- ============ HISTORY ============ -->
+  <div class="panel">
+    <h2>2 · Leg History <span class="mono-dim" style="text-transform:none;letter-spacing:0">(history.json — every leg is recorded, even refusals)</span></h2>
+    <div id="historyBox" class="empty">no legs yet — run a dry drip or check back</div>
+  </div>
+
+  <!-- ============ SCHEDULE PREVIEW ============ -->
+  <div class="panel">
+    <h2>3 · Schedule Preview</h2>
+    <div id="planBox" class="empty">click “Preview schedule”</div>
+  </div>
+
+  <!-- ============ REFERENCE ============ -->
+  <div class="panel">
+    <h2>4 · Exit Codes</h2>
+    <table id="exitTbl">
+      <tr><td>0</td><td>SUCCESS or dry-run leg completed</td></tr>
+      <tr><td>1</td><td>Quote error (e.g. no liquidity)</td></tr>
+      <tr><td>2</td><td>Slippage guard rejected</td></tr>
+      <tr><td>3</td><td>REFUNDED</td></tr>
+      <tr><td>4</td><td>FAILED</td></tr>
+      <tr><td>5</td><td>TIMEOUT / INCOMPLETE_DEPOSIT</td></tr>
+      <tr><td>6</td><td>Wet run refused (no credentials / not implemented)</td></tr>
+    </table>
+    <div class="mono-dim" style="font-size:11px;margin-top:10px">
+      CLI: <span id="cliCmd">python3 scripts/scheduler.py --from eth --token usdc --amount 10 --to near --asset near</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- chains (seeded from /v0/tokens on first load; graceful fallback) ----------
+const FALLBACK_CHAINS = ["eth","base","arb","polygon","bsc","avax","sol","near","btc"];
+let CHAINS = FALLBACK_CHAINS;
+
+function fillChains(){
+  for (const id of ["from","to"]){
+    const sel = document.getElementById(id);
+    sel.innerHTML = CHAINS.map(c=>`<option>${c}</option>`).join("");
+  }
+  document.getElementById("to").value = "near";
+}
+fetch("/api/chains").then(r=>r.ok?r.json():null).then(d=>{
+  if (d && d.chains && d.chains.length){ CHAINS = d.chains; fillChains(); }
+}).catch(()=>{});
+
+// ---------- live quote (dry-run) ----------
+const qOut = document.getElementById("quoteOut");
+document.getElementById("btnQuote").onclick = async () => {
+  qOut.className = "result"; qOut.style.display="block"; qOut.textContent = "requesting live quote…";
+  const body = {
+    from: v("from"), token: v("token"), amount: v("amount"),
+    to: v("to"), asset: v("asset"), slippage: v("slippage"),
+  };
+  try{
+    const r = await fetch("/api/quote", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify(body)});
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error + (d.detail? " — "+d.detail : ""));
+    const q = d.quote || {};
+    qOut.textContent = JSON.stringify({
+      mode: d.mode, amountIn: q.amountInFormatted, amountOut: q.amountOutFormatted,
+      minAmountOut: q.minAmountOutFormatted, timeEstimate: q.timeEstimate, signature: q.signature,
+    }, null, 2);
+    loadHistory();
+  }catch(e){ qOut.className="result err"; qOut.textContent = "ERROR: "+e.message; }
+};
+
+// ---------- schedule preview ----------
+const pOut = document.getElementById("planOut");
+document.getElementById("btnPlan").onclick = async () => {
+  const body = { total:+v("total"), drips:+v("drips"), interval:v("interval"), slippage:+v("slippage") };
+  try{
+    const r = await fetch("/api/plan", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify(body)});
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    pOut.className="result"; pOut.style.display="block";
+    pOut.textContent = JSON.stringify({perDrip:d.perDrip, drips:d.drips, interval:d.interval, first3:d.schedule.slice(0,3)}, null, 2);
+    renderPlan(d);
+  }catch(e){ pOut.className="result err"; pOut.textContent = "ERROR: "+e.message; }
+};
+
+function renderPlan(d){
+  const box = document.getElementById("planBox");
+  box.innerHTML = `<table><tr><th>#</th><th>at (UTC)</th><th>amount</th><th>max slip</th></tr>` +
+    d.schedule.map(r=>`<tr><td>${r.n}</td><td>${r.at}</td><td>${r.amount}</td><td>${r.maxSlippagePct}%</td></tr>`).join("") +
+    `</table>`;
+}
+
+// ---------- history ----------
+const badge = s => `<span class="badge b-${s}">${s}</span>`;
+async function loadHistory(){
+  const box = document.getElementById("historyBox");
+  try{
+    const r = await fetch("/history.json", {cache:"no-store"});
+    const legs = await r.json();
+    if (!legs.length){ box.className="empty"; box.textContent="no legs yet — run a dry drip"; return; }
+    box.className="";
+    box.innerHTML = `<table><tr><th>when</th><th>leg</th><th>amount in</th><th>expected out</th><th>status</th><th>tx</th></tr>` +
+      legs.slice().reverse().map(l=>`<tr>
+        <td class="mono-dim">${(l.ts||"").replace("T"," ").replace("Z","")}</td>
+        <td>${l.from} → ${l.to}${l.dry?' <span class="mono-dim">(dry)</span>':''}</td>
+        <td>${l.amount_in_formatted ?? "—"}</td>
+        <td>${(l.amount_out_expected ?? l.amount_out_actual ?? "—").slice(0,12)}</td>
+        <td>${badge(l.status)}</td>
+        <td>${l.explorer?`<a href="${l.explorer}" target="_blank" rel="noopener">tx ↗</a>`:"—"}</td>
+      </tr>`).join("") + `</table>`;
+  }catch(e){ box.className="empty"; box.textContent="history unavailable"; }
+}
+loadHistory();
+setInterval(loadHistory, 10000); // live-ish refresh while demoing
+
+function v(id){ return document.getElementById(id).value.trim(); }
+fillChains();
+</script>
+</body>
+</html>

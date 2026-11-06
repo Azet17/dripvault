@@ -29,6 +29,8 @@ Built for **NEAR HACKATHON** (2026-11-01 → 2026-11-14), track `defi` (Unstoppa
   1Click depositAddress, tx hash parsed, `/v0/deposit/submit` accelerator, then status
   polling to a terminal state). End-to-end wet run pending a funded mainnet dev account.
 - **Interval loop** — `--interval 24` loops drips every 24h (`--max-legs N` caps it).
+- **Local web UI** — single-file dashboard (`web/index.html` + stdlib server): deposit form,
+  live dry-run quote, schedule preview, and the leg history with explorer links.
 - **Web UI**. Not implemented.
 - Stretch: a NEAR contract owning the vault via **Chain Signatures**. Not started.
 
@@ -106,6 +108,13 @@ Requires network access to `1click.chaindefuser.com`. No API key needed for quot
    `loop: max_legs=2 reached, stopping` — two legs appended to `history.json`.
    (0.0003h ≈ 1 second, used here so the demo finishes; real schedules use e.g. `--interval 24`.)
 
+7. **See the web dashboard:**
+   `python3 scripts/ui_server.py 8787` then open `http://127.0.0.1:8787`
+   → *See* the DripVault dashboard: pick a route and amount, **Get live quote (dry-run)**
+   returns a real 1Click quote (mode DRY-RUN), **Preview schedule** renders the drip table,
+   and **Leg History** lists every recorded leg with status badges and explorer links.
+   Serves localhost only; `history.json` is read from disk (no backend, no DB).
+
 Requires network access to `1click.chaindefuser.com`. No API key needed for quotes.
 
 ## Exit codes
@@ -131,7 +140,7 @@ Requires network access to `1click.chaindefuser.com`. No API key needed for quot
       `/v0/deposit/submit` accelerator → poll to terminal state
 - [x] Interval loop (`--interval 24 --max-legs N`)
 - [ ] End-to-end wet run on mainnet (awaits funded dedicated dev account)
-- [ ] Web UI (deposit / schedule / history)
+- [x] Web UI (deposit form / live dry-run quote / schedule preview / leg history)
 - [ ] Stretch: contract-owned vault via Chain Signatures
 
 ## License

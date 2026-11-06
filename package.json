@@ -6,7 +6,8 @@
   "scripts": {
     "quote": "python3 scripts/quote.py",
     "plan": "python3 scripts/plan.py",
-    "drip": "python3 scripts/scheduler.py"
+    "drip": "python3 scripts/scheduler.py",
+    "ui": "python3 scripts/ui_server.py"
   },
   "license": "MIT"
 }
