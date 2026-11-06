@@ -5,7 +5,8 @@
   "description": "Cross-chain DCA on NEAR Intents (1Click API) \u2014 dry-run quote & planning CLI today; executing scheduler in progress. Self-custodial: keys stay on the user's machine, never in the repo. NEAR HACKATHON 2026, track defi.",
   "scripts": {
     "quote": "python3 scripts/quote.py",
-    "plan": "python3 scripts/plan.py"
+    "plan": "python3 scripts/plan.py",
+    "drip": "python3 scripts/scheduler.py"
   },
   "license": "MIT"
 }

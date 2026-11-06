@@ -20,11 +20,16 @@ Built for **NEAR HACKATHON** (2026-11-01 → 2026-11-14), track `defi` (Unstoppa
 - **Slippage guard reject path** — the quote command exits with code 2 when the user's
   slippage limit is below the minimum, before anything could execute.
 - **Schedule planner** — pure planning of the drip schedule (amounts + timestamps), no API calls.
+- **Drip leg state machine** (dry-run) — `scripts/scheduler.py` fetches a real quote, records
+  the leg in `history.json`, and refuses wet runs without dedicated signing credentials.
 
 ## What is NOT built yet
 
-- The **executing scheduler** (`npm run drip`) — signs and submits real swaps. Not implemented.
-- **Status polling** for REFUNDED/FAILED legs. Not implemented.
+- **Wet-run deposit signing** — the scheduler's dry-run path is complete; signing the actual
+  deposit transfer with a NEAR account key is the remaining piece (it refuses to run wet
+  without credentials, exit code 6).
+- **Automated interval loop** (`npm run drip` every N hours) — the per-leg scheduler exists;
+  the cron-style wrapper does not.
 - **Web UI**. Not implemented.
 - Stretch: a NEAR contract owning the vault via **Chain Signatures**. Not started.
 
@@ -82,15 +87,41 @@ cd dripvault
    `python3 scripts/plan.py --total 300 --drips 10 --interval 24h --slippage 1.0`
    → *See* a JSON schedule of 10 drips (30.0 each) with UTC timestamps 24h apart.
 
+5. **See a full dry-run drip leg recorded in history:**
+   `python3 scripts/scheduler.py --from eth --token usdc --amount 10 --to near --asset near`
+   → *See* the leg printed with real quote numbers and `status: DRY_RUN`, then check
+   `history.json` — the leg is appended (amounts, expected out, min out, time estimate).
+   Nothing was executed; no keys were read.
+
+   Now try wet mode with no credentials present:
+   `python3 scripts/scheduler.py --from eth --token usdc --amount 10 --to near --asset near --wet`
+   → *See* `WET RUN REFUSED: set NEAR_MAIN_ACCOUNT + NEAR_MAIN_KEY in .env` and exit code `6`.
+   The leg is recorded as `WET_RUN_REFUSED_NO_CREDENTIALS` — the scheduler never fabricates
+   a wet run.
+
 Requires network access to `1click.chaindefuser.com`. No API key needed for quotes.
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | SUCCESS, or dry-run leg completed |
+| 1 | Quote error (e.g. no liquidity for that route/size) |
+| 2 | Slippage guard rejected the quote |
+| 3 | Leg ended REFUNDED (funds returned by 1Click) |
+| 4 | Leg ended FAILED |
+| 5 | Status polling TIMEOUT |
+| 6 | Wet run refused: signing credentials missing, or not yet implemented |
 
 ## Status
 
 - [x] 1Click quote client (dry-run safe, live-verified against eth→near and arb→eth)
 - [x] Slippage guard reject path (exit code 2)
 - [x] Schedule planner (pure, no API)
-- [ ] Executing scheduler (`npm run drip`) — not implemented yet
-- [ ] Status polling + REFUNDED/FAILED handling
+- [x] Per-leg scheduler with dry-run state machine (`scripts/scheduler.py`)
+- [x] Status polling logic (`/v0/status?depositAddress=...`, PENDING_DEPOSIT→terminal states)
+- [ ] Wet-run deposit signing (needs NEAR account key; refuses without, exit 6)
+- [ ] Interval loop wrapper (`npm run drip` every N hours)
 - [ ] Web UI (deposit / schedule / history)
 - [ ] Stretch: contract-owned vault via Chain Signatures
 
