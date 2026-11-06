@@ -102,6 +102,10 @@ cd dripvault
 
 Requires network access to `1click.chaindefuser.com`. No API key needed for quotes.
 
+**Operational note:** run the scheduler and the UI in separate terminals. `history.json` is
+written atomically per leg (write-to-temp + rename), but do not force-kill the scheduler
+mid-drip — let the leg reach a terminal state first.
+
 6. **See the interval loop execute two capped dry legs:**
    `python3 scripts/scheduler.py --from eth --token usdc --amount 5 --to near --asset near --interval 0.0003 --max-legs 2`
    → *See* `--- drip leg 1 ---` … `Next drip in 0.0003h` … `--- drip leg 2 ---` …
@@ -109,13 +113,17 @@ Requires network access to `1click.chaindefuser.com`. No API key needed for quot
    (0.0003h ≈ 1 second, used here so the demo finishes; real schedules use e.g. `--interval 24`.)
 
 7. **See the web dashboard:**
-   `python3 scripts/ui_server.py 8787` then open `http://127.0.0.1:8787`
+   `npm run ui` (or `python3 scripts/ui_server.py 8787`) then open `http://127.0.0.1:8787`
    → *See* the DripVault dashboard: pick a route and amount, **Get live quote (dry-run)**
    returns a real 1Click quote (mode DRY-RUN), **Preview schedule** renders the drip table,
    and **Leg History** lists every recorded leg with status badges and explorer links.
    Serves localhost only; `history.json` is read from disk (no backend, no DB).
 
 Requires network access to `1click.chaindefuser.com`. No API key needed for quotes.
+
+**Operational note:** run the scheduler and the UI in separate terminals. `history.json` is
+written atomically per leg (write-to-temp + rename), but do not force-kill the scheduler
+mid-drip — let the leg reach a terminal state first.
 
 ## Exit codes
 
