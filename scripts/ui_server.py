@@ -104,7 +104,15 @@ class Handler(BaseHTTPRequestHandler):
 
 def main() -> int:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8787
-    srv = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    try:
+        srv = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    except OSError as e:
+        if getattr(e, "errno", None) == 98:
+            print(f"Port {port} already in use — is the UI already running? "
+                  f"Try: curl http://127.0.0.1:{port}/health  or pick another port: "
+                  f"npm run ui -- {port + 1}", file=sys.stderr)
+            return 7
+        raise
     print(f"DripVault UI → http://127.0.0.1:{port}  (Ctrl-C to stop)")
     srv.serve_forever()
     return 0
