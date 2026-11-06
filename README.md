@@ -1,63 +1,91 @@
 # DripVault
 
-Cross-chain dollar-cost-averaging (DCA) vault built on **NEAR Intents (1Click API)**.
+Cross-chain dollar-cost-averaging (DCA) on **NEAR Intents (1Click API)** — currently a
+**dry-run quote and planning CLI**; the executing scheduler is not built yet.
 
-Deposit USDC from any supported chain, pick a target asset (BTC, ETH or NEAR) and a schedule.
-On every interval the vault requests a quote from the 1Click API, rejects quotes that beat the
-user's slippage limit, and executes the swap so the asset lands **in the user's own address**
-on the target chain. No custodian holds your funds at rest — between drips the money sits in
-the user's wallet, not in a vault contract.
+Planned final shape: deposit USDC from any supported chain, pick a target asset (BTC, ETH or
+NEAR) and a schedule. On every interval the scheduler requests a quote from the 1Click API,
+rejects quotes that beat the user's slippage limit, and executes the swap so the asset lands
+in the user's own address on the target chain.
 
 Built for **NEAR HACKATHON** (2026-11-01 → 2026-11-14), track `defi` (Unstoppable DeFi).
 
-## What it does
+## What works today (verified)
 
-- **Deposit from any chain** — NEAR Intents moves USDC into the working account.
-- **Scheduled drips** — every N hours/days the vault fetches a live 1Click quote.
-- **Slippage guard** — quotes worse than the user's limit are rejected and logged, never executed.
-- **Status tracking** — every executed (or failed/refunded) leg is recorded with an explorer link.
-- **Dry-run mode** — fetches real quotes without executing, so anyone (including judges) can try
-  the full flow with **zero funds**.
+- **Live cross-chain quotes** — resolves asset ids against the live `/v0/tokens` list
+  (39 chains) and fetches real quotes from the 1Click API with `dry=true`
+  (no deposit address generated, nothing executes, no funds involved).
+- **Slippage guard reject path** — the quote command exits with code 2 when the user's
+  slippage limit is below the minimum, before anything could execute.
+- **Schedule planner** — pure planning of the drip schedule (amounts + timestamps), no API calls.
+
+## What is NOT built yet
+
+- The **executing scheduler** (`npm run drip`) — signs and submits real swaps. Not implemented.
+- **Status polling** for REFUNDED/FAILED legs. Not implemented.
+- **Web UI**. Not implemented.
+- Stretch: a NEAR contract owning the vault via **Chain Signatures**. Not started.
+
+## Custody model (plain terms)
+
+Today nothing holds funds: the dry-run client touches no keys and no money. In the planned
+final version, a **NEAR account the user controls** (its private key lives in the user's own
+`.env`, never in this repo) signs each drip. The app itself holds nothing between drips —
+funds sit in that user-controlled account, not in a DripVault contract. This is
+key-held-by-user, not smart-contract-custodial; it is the honest scope for this build window
+(see Status), with the Chain Signatures contract as the stretch goal.
+
+Note: NEAR Intents has **no testnet** (per the hackathon FAQ Q-007). Wet runs would use
+mainnet with a dedicated dev account and tiny amounts — which is also why they are deferred
+until the scheduler exists.
 
 ## How NEAR fits
 
 - **NEAR Intents / 1Click API** does the cross-chain settlement: quotes, deposit addresses,
   execution and status — no bridges, no custodian.
-- Between scheduled drips, funds stay in the user-controlled NEAR account — the app holds
-  nothing.
-- (Stretch, in progress) a NEAR smart contract owns the vault and uses **Chain Signatures**
-  to derive target-chain addresses directly.
+- Between scheduled drips, funds stay in the user-controlled NEAR account.
 
 ## Try it (dry-run, no funds needed)
 
-Prerequisites: Node 20+, a terminal.
+Prerequisites: **Python 3.10+** only. No third-party packages — the scripts use the standard
+library, so there is nothing to install.
 
 ```bash
 git clone https://github.com/Azet17/dripvault.git
 cd dripvault
-npm install
 ```
 
 1. **See a live cross-chain quote without spending anything:**
-   `npm run quote -- --from 1 --token usdc --amount 10 --to near --asset near`
-   → *See* a JSON quote with `amountIn`, `amountOut`, `deadline`, and a `timeEstimate`.
+   `python3 scripts/quote.py --from eth --token usdc --amount 10 --to near --asset near`
+   → *See* JSON with `amountInFormatted: "10.0"`, a live `amountOutFormatted` around 2.6x
+   wNEAR, `minAmountOut`, and a `timeEstimate` (~45 seconds). The output includes
+   `"mode": "DRY-RUN (nothing executed)"`.
 
-2. **See the slippage guard reject a bad trade:**
-   `npm run quote -- --from 1 --token usdc --amount 10 --to near --asset near --max-slippage 0.000001`
-   → *See* `REJECTED: quote slippage X% exceeds limit 0.000001%` (exit code 2).
+   (`npm run quote` also works if you have Node/npm installed; the npm script just wraps the
+   Python command.)
 
-3. **See the schedule planner:**
-   `npm run plan -- --total 300 --drips 10 --interval 24h --slippage 1.0`
-   → *See* a table of 10 planned drips with timestamps and per-drip amounts.
+2. **See the slippage guard reject:**
+   `python3 scripts/quote.py --from eth --token usdc --amount 10 --to near --asset near --max-slippage 0`
+   → *See* `REJECTED: slippage limit <= 0 (slippage guard demonstration)` and exit code `2`
+   (`echo $?` prints `2`).
 
-4. **(Wet run, needs a funded NEAR testnet/intents account)** set `.env` per `.env.example`,
-   then `npm run drip -- --dry=false` → *See* the executed deposit + swap leg and an explorer
-   link in `history.json`.
+3. **See a real no-liquidity rejection:**
+   `python3 scripts/quote.py --from base --token usdc --amount 25 --to btc --asset btc`
+   → *See* `QUOTE ERROR: 400 ... "No liquidity available"` and exit code `1` — the API itself
+   refuses this small-cap route; DripVault surfaces the failure instead of hiding it.
+
+4. **See the schedule planner:**
+   `python3 scripts/plan.py --total 300 --drips 10 --interval 24h --slippage 1.0`
+   → *See* a JSON schedule of 10 drips (30.0 each) with UTC timestamps 24h apart.
+
+Requires network access to `1click.chaindefuser.com`. No API key needed for quotes.
 
 ## Status
 
-- [x] 1Click quote client (dry-run safe)
-- [ ] Slippage guard wired into scheduler
+- [x] 1Click quote client (dry-run safe, live-verified against eth→near and arb→eth)
+- [x] Slippage guard reject path (exit code 2)
+- [x] Schedule planner (pure, no API)
+- [ ] Executing scheduler (`npm run drip`) — not implemented yet
 - [ ] Status polling + REFUNDED/FAILED handling
 - [ ] Web UI (deposit / schedule / history)
 - [ ] Stretch: contract-owned vault via Chain Signatures

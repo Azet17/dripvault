@@ -2,7 +2,7 @@
   "name": "dripvault",
   "version": "0.1.0",
   "private": true,
-  "description": "Cross-chain DCA vault on NEAR Intents (1Click API) — deposit from any chain, drip into BTC/ETH/NEAR on a schedule. Non-custodial. NEAR HACKATHON 2026, track defi.",
+  "description": "Cross-chain DCA on NEAR Intents (1Click API) — dry-run quote & planning CLI today; executing scheduler in progress. NEAR HACKATHON 2026, track defi.",
   "scripts": {
     "quote": "python3 scripts/quote.py",
     "plan": "python3 scripts/plan.py"
