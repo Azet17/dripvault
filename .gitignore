@@ -5,3 +5,5 @@ __pycache__/
 history.json
 
 demo/
+contract/target/
+*.wasm
