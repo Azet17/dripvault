@@ -1,0 +1,10 @@
+/home/ubuntu/dripvault/contract/target/release/deps/near_global_contracts-317f5173eb07b684.d: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/global_contract_identifier.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/state_init.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/universal_state_init.rs
+
+/home/ubuntu/dripvault/contract/target/release/deps/libnear_global_contracts-317f5173eb07b684.rlib: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/global_contract_identifier.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/state_init.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/universal_state_init.rs
+
+/home/ubuntu/dripvault/contract/target/release/deps/libnear_global_contracts-317f5173eb07b684.rmeta: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/global_contract_identifier.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/state_init.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/universal_state_init.rs
+
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/lib.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/global_contract_identifier.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/state_init.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/near-global-contracts-0.3.3/src/universal_state_init.rs:

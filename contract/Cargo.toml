@@ -1,0 +1,21 @@
+[package]
+name = "dripvault"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "DripVault on-chain vault contract — cross-chain DCA state, intents integration, user-owned drips"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = { version = "5.15", features = ["unit-testing", "legacy"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

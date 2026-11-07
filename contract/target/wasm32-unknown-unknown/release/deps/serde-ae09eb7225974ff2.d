@@ -1,0 +1,14 @@
+/home/ubuntu/dripvault/contract/target/wasm32-unknown-unknown/release/deps/serde-ae09eb7225974ff2.d: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs /home/ubuntu/dripvault/contract/target/wasm32-unknown-unknown/release/build/serde-da9b760cfaf785b1/out/private.rs
+
+/home/ubuntu/dripvault/contract/target/wasm32-unknown-unknown/release/deps/libserde-ae09eb7225974ff2.rlib: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs /home/ubuntu/dripvault/contract/target/wasm32-unknown-unknown/release/build/serde-da9b760cfaf785b1/out/private.rs
+
+/home/ubuntu/dripvault/contract/target/wasm32-unknown-unknown/release/deps/libserde-ae09eb7225974ff2.rmeta: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs /home/ubuntu/dripvault/contract/target/wasm32-unknown-unknown/release/build/serde-da9b760cfaf785b1/out/private.rs
+
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs:
+/home/ubuntu/dripvault/contract/target/wasm32-unknown-unknown/release/build/serde-da9b760cfaf785b1/out/private.rs:
+
+# env-dep:OUT_DIR=/home/ubuntu/dripvault/contract/target/wasm32-unknown-unknown/release/build/serde-da9b760cfaf785b1/out
