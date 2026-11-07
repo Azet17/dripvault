@@ -48,7 +48,10 @@
   a:hover{text-decoration:underline}
   .empty{color:var(--dim);font-size:12px;padding:14px 0;text-align:center}
   .mono-dim{color:var(--dim)}
-  .tag{font-size:10px;color:var(--accent);border:1px solid rgba(0,209,143,.35);border-radius:4px;padding:1px 6px;margin-left:8px}
+  .pill{display:inline-block;background:rgba(0,209,143,.1);color:var(--accent);border:1px solid rgba(0,209,143,.35);
+        border-radius:999px;padding:4px 14px;font-size:12px;font-weight:600}
+  .pill.green{background:rgba(63,185,80,.12);color:var(--green);border-color:rgba(63,185,80,.4)}
+  .pill.red{background:rgba(248,81,73,.12);color:var(--red);border-color:rgba(248,81,73,.4)}
 </style>
 </head>
 <body>
@@ -149,13 +152,39 @@ document.getElementById("btnQuote").onclick = async () => {
     const d = await r.json();
     if (!r.ok) throw new Error(d.error + (d.detail? " — "+d.detail : ""));
     const q = d.quote || {};
-    qOut.textContent = JSON.stringify({
-      mode: d.mode, amountIn: q.amountInFormatted, amountOut: q.amountOutFormatted,
-      minAmountOut: q.minAmountOutFormatted, timeEstimate: q.timeEstimate, signature: q.signature,
-    }, null, 2);
+    qOut.innerHTML = quoteCard(d, q);
     loadHistory();
   }catch(e){ qOut.className="result err"; qOut.textContent = "ERROR: "+e.message; }
 };
+
+// visual quote card — bukan JSON mentah
+function quoteCard(d, q){
+  const out = q.amountOutFormatted ?? "—";
+  const short = out.length > 12 ? (+out).toFixed(6) : out;
+  const sig = q.signature ?? "";
+  return `
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px">${esc(v("from"))} · ${esc(v("token"))}</div>
+        <div style="font-size:26px;font-weight:700;color:var(--accent)">${esc(q.amountInFormatted ?? v("amount"))}</div>
+      </div>
+      <div style="font-size:26px;color:var(--accent)">→</div>
+      <div style="flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px">${esc(v("to"))} · ${esc(v("asset"))}</div>
+        <div style="font-size:26px;font-weight:700;color:var(--accent)">${esc(short)}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+      <span class="pill">⏱ ${esc(q.timeEstimate ?? "?")} s</span>
+      ${q.minAmountOutFormatted ? `<span class="pill">min out ${esc((+q.minAmountOutFormatted).toFixed(6))}</span>` : ""}
+      <span class="pill green">DRY-RUN — nothing executed</span>
+    </div>
+    ${sig ? `<details style="color:var(--dim);font-size:11px"><summary style="cursor:pointer">solver signature</summary>
+      <div style="word-break:break-all;margin-top:6px">${esc(sig)}</div></details>` : ""}
+  </div>`;
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ---------- schedule preview ----------
 const pOut = document.getElementById("planOut");
