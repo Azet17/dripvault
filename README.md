@@ -31,8 +31,21 @@ Built for **NEAR HACKATHON** (2026-11-01 → 2026-11-14), track `defi` (Unstoppa
 - **Interval loop** — `--interval 24` loops drips every 24h (`--max-legs N` caps it).
 - **Local web UI** — single-file dashboard (`web/index.html` + stdlib server): deposit form,
   live dry-run quote, schedule preview, and the leg history with explorer links.
-- **Web UI**. Not implemented.
-- Stretch: a NEAR contract owning the vault via **Chain Signatures**. Not started.
+- **Web UI**. Implemented — see Try-it step 7.
+- **Interval loop** — `--interval 24` loops drips every 24h (`--max-legs N` caps it).
+
+## On-chain contract (testnet)
+
+A Rust smart contract (`contract/src/lib.rs`, NEAR SDK 5) is **deployed and live** at
+[`dripvault-dev.testnet`](https://testnet.nearblocks.io/txns/DF3G4cfLSqGpySuKxDTiWaW5gSkzgu4RY2T9Cy5iVBkx)
+(tx `DF3G4cfLSqGpySuKxDTiWaW5gSkzgu4RY2T9Cy5iVBkx`). It provides:
+
+- `set_schedule(...)` — register a DCA schedule on-chain (per user)
+- `record_drip(...)` — append an executed drip to a per-user on-chain ledger
+- `drips_done(account)` / `get_leg(account, index)` — read state
+
+The contract holds **no funds** — it is the tamper-evident registry/ledger. Custody stays
+with the user's own account at all times (see Custody model).
 
 ## Custody model (plain terms)
 
