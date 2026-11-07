@@ -7,3 +7,4 @@ history.json
 demo/
 contract/target/
 *.wasm
+*.log
