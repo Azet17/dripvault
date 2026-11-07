@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DripVault — Cross-chain DCA on NEAR Intents</title>
+<link rel="icon" type="image/jpeg" href="/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -14,9 +15,9 @@
     --glow:rgba(0,230,162,.14);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{
+  body{text-shadow:0 1px 3px rgba(0,0,0,.8);text-shadow:0 1px 3px rgba(0,0,0,.8);
     background:
-      linear-gradient(rgba(7,10,16,.30), rgba(7,10,16,.40)),
+      linear-gradient(rgba(7,10,16,.15), rgba(7,10,16,.25)),
       url('bg.jpg') center/cover no-repeat fixed,
       var(--bg);
     color:var(--text);
@@ -25,9 +26,8 @@
     min-height:100vh;
   }
   header{display:flex;align-items:center;gap:14px;padding:6px 2px 18px}
-  .logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:24px;
-        background:linear-gradient(135deg,rgba(0,230,162,.18),rgba(99,168,255,.10));
-        border:1px solid rgba(0,230,162,.35);box-shadow:0 0 24px var(--glow)}
+  .logo{width:52px;height:52px;border-radius:14px;object-fit:cover;
+        border:1px solid rgba(0,230,162,.45);box-shadow:0 0 24px var(--glow)}
   .brand h1{font-size:22px;font-weight:800;letter-spacing:.3px;line-height:1.1}
   .brand h1 .g{color:var(--accent)}
   .brand .sub{font-size:12.5px;margin-top:2px}
@@ -43,7 +43,7 @@
   .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
   @media(max-width:980px){.grid{grid-template-columns:1fr}}
   .panel{
-    background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 40%),rgba(16,22,35,.88);
+    background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 40%),rgba(16,22,35,.62);
     backdrop-filter:blur(10px);
     border:1px solid var(--line);border-radius:16px;padding:20px 22px;
     box-shadow:0 10px 30px rgba(0,0,0,.35);
@@ -117,7 +117,7 @@
 </head>
 <body>
 <header>
-  <div class="logo">💧</div>
+  <img class="logo" src="/logo.jpg" alt="DripVault">
   <div class="brand">
     <h1>Drip<span class="g">Vault</span></h1>
     <div class="sub">Cross-chain DCA on NEAR Intents (1Click API) · quotes are live · nothing executes without explicit wet mode + your keys</div>
@@ -190,7 +190,7 @@
   </div>
 </div>
 
-<div class="foot">💧 <b>DripVault</b> — self-custodial by design · keys stay on your machine, never in the repo · <a href="https://github.com/Azet17/dripvault" target="_blank" rel="noopener">github.com/Azet17/dripvault</a></div>
+<div class="foot"><img src="/logo.jpg" alt="" style="width:18px;height:18px;border-radius:5px;object-fit:cover;vertical-align:-4px;margin-right:6px"> <b>DripVault</b> — self-custodial by design · keys stay on your machine, never in the repo · <a href="https://github.com/Azet17/dripvault" target="_blank" rel="noopener">github.com/Azet17/dripvault</a></div>
 
 <script>
 // ---------- chains (seeded from /v0/tokens on first load; graceful fallback) ----------

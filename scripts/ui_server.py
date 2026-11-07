@@ -45,6 +45,12 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, f.read_bytes(), "text/html; charset=utf-8")
             else:
                 self._send(404, b"UI not found", "text/plain")
+        elif path in ("/bg.jpg", "/logo.jpg"):
+            f = DIR / "web" / path.lstrip("/")
+            if f.exists():
+                self._send(200, f.read_bytes(), "image/jpeg")
+            else:
+                self._send(404, b"img not found", "text/plain")
         elif path == "/history.json":
             data = json.loads(HISTORY.read_text()) if HISTORY.exists() else []
             self._json(200, data)
