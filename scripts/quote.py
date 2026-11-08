@@ -17,11 +17,14 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 API = "https://1click.chaindefuser.com/v0/quote"
 TOKENS_URL = "https://1click.chaindefuser.com/v0/tokens"
+HISTORY = Path(__file__).resolve().parent.parent / "history.json"
 
 # Canonical chain aliases used by the live token list ("eth", "near", "btc", ...).
 ALIAS = {"ethereum": "eth", "bnb": "bsc", "binance": "bsc", "polygon": "pol",
@@ -117,6 +120,31 @@ def main() -> int:
 
     quote = q.get("quote", q)
 
+    status = "REJECTED" if args.max_slippage <= 0 else "DRY_RUN"
+    leg = {
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "dry": True,
+        "from": f"{args.src_chain}/{args.token}",
+        "to": f"{args.dst_chain}/{args.asset}",
+        "amount_in": quote.get("amountIn"),
+        "amount_in_formatted": quote.get("amountInFormatted"),
+        "amount_out_expected": quote.get("amountOutFormatted"),
+        "min_amount_out": quote.get("minAmountOutFormatted"),
+        "time_estimate_s": quote.get("timeEstimate"),
+        "status": status,
+        "deposit_address": None,
+        "explorer": None,
+    }
+    # every CLI leg is recorded — even refusals (status REJECTED, exit 2)
+    try:
+        h = json.loads(HISTORY.read_text()) if HISTORY.exists() else []
+        h.append(leg)
+        tmp = HISTORY.with_suffix(".tmp")
+        tmp.write_text(json.dumps(h, indent=2))
+        tmp.replace(HISTORY)
+    except OSError as e:
+        print(f"(warn: could not record leg: {e})", file=sys.stderr)
+
     print(json.dumps({
         "mode": "DRY-RUN (nothing executed)",
         "assetIn": src,
@@ -130,7 +158,7 @@ def main() -> int:
     }, indent=2))
 
     if args.max_slippage <= 0:
-        print("REJECTED: slippage limit <= 0 (slippage guard demonstration)")
+        print("REJECTED: slippage limit <= 0 — no swap attempted")
         return 2
     print("OK: quote within limits (dry-run)")
     return 0
