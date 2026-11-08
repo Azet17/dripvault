@@ -5,66 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DripVault — Cross-chain DCA on NEAR Intents</title>
 <link rel="icon" type="image/jpeg" href="/logo.jpg">
-<script src="https://cdn.jsdelivr.net/npm/near-api-js@2.1.4/dist/near-api-js.min.js">
-// ---------- ON-CHAIN EXECUTION (near-api-js → dripvault-dev.testnet) ----------
-const CONTRACT_ID = "dripvault-dev.testnet";
-let nearConnection = null, wallet = null, contract = null;
-
-async function initNear(){
-  if (!window.nearApi) { console.warn("near-api-js not loaded"); return false; }
-  nearConnection = nearApi.connect({
-    networkId: "testnet",
-    nodeUrl: "https://rpc.testnet.near.org",
-    walletUrl: "https://wallet.testnet.near.org",
-    helperUrl: "https://helper.testnet.near.org",
-    keyStore: new nearApi.keyStores.BrowserLocalStorageKeyStore(),
-  });
-  wallet = new nearApi.WalletConnection(nearConnection, "dripvault");
-  return true;
-}
-
-// connect wallet
-document.getElementById("btnConnect").onclick = async () => {
-  await initNear();
-  if (!wallet.isSignedIn()) {
-    await wallet.requestSignIn({ contractId: CONTRACT_ID, methodNames: ["set_schedule","record_drip","drips_done","get_leg"] });
-  }
-  updateWalletUI();
-};
-
-function updateWalletUI(){
-  const st = document.getElementById("walletStatus");
-  const btnExec = document.getElementById("btnExecDrip");
-  if (wallet && wallet.isSignedIn()) {
-    st.innerHTML = `✅ connected: <b>${wallet.getAccountId()}</b>`;
-    btnExec.style.display = "block";
-  } else {
-    st.textContent = "not connected";
-    btnExec.style.display = "none";
-  }
-}
-
-// execute drip on-chain — call record_drip() di kontrak
-document.getElementById("btnExecDrip").onclick = async () => {
-  const st = document.getElementById("chainStatus");
-  if (!wallet || !wallet.isSignedIn()) { st.textContent = "connect wallet dulu"; return; }
-  st.textContent = "executing drip on-chain…";
-  try {
-    const contract = new nearApi.Contract(wallet.account(), CONTRACT_ID, {
-      changeMethods: ["record_drip","set_schedule"],
-      viewMethods: ["drips_done","get_leg"],
-    });
-    // contoh call: record_drip(amount_in, expected, actual, sig)
-    const result = await contract.record_drip({
-      amountIn: "10000000",          // 10 USDC (6 decimals)
-      amountOutExpected: "26700000", // expected out (dummy, real: dari quote)
-      amountOutActual: null,
-      quoteSignature: "solver-sig-from-quote",
-    });
-    st.innerHTML = `✅ drip recorded on-chain: seq ${result}`;
-  } catch(e) { st.textContent = "ERROR: " + e.message; }
-};
-</script>
+  </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -91,7 +32,7 @@ document.getElementById("btnExecDrip").onclick = async () => {
   .brand h1{font-size:22px;font-weight:800;letter-spacing:.3px;line-height:1.1}
   .brand h1 .g{color:var(--accent)}
   .brand .sub{font-size:12.5px;margin-top:2px}
-  .sub{color:var(--dim)}
+  .sub{color:#c9d4e5;text-shadow:0 2px 6px rgba(0,0,0,.95),0 0 14px rgba(0,0,0,.7)}
   .tag{font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--accent);
        background:rgba(0,230,162,.1);border:1px solid rgba(0,230,162,.35);
        border-radius:999px;padding:6px 14px;display:inline-flex;align-items:center;gap:7px}
@@ -215,15 +156,6 @@ document.getElementById("btnExecDrip").onclick = async () => {
     <button id="btnQuote">Get live quote (dry-run)</button>
     <div class="result" id="quoteOut"></div>
     <div class="result" id="planOut"></div>
-
-    <!-- ============ ON-CHAIN EXECUTION (smart contract integration) ============ -->
-    <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--line)">
-      <h2 style="font-size:11.5px;text-transform:uppercase;letter-spacing:2px;color:var(--dim);margin-bottom:12px">
-        <span class="n">5</span> On-Chain Execution
-        <span class="hint mono-dim">contract: dripvault-dev.testnet</span></h2>
-      <button class="ghost" id="btnConnect" style="margin-top:6px">🔗 Connect NEAR Wallet</button>
-      <div id="walletStatus" class="mono-dim" style="font-size:11px;margin-top:8px">not connected</div>
-      <button class="ghost" id="btnExecDrip" style="margin-top:10px;display:none">⛓️ Execute Drip On-Chain</button>
       <div id="chainStatus" class="mono-dim" style="font-size:11px;margin-top:8px"></div>
     </div>
   </div>
@@ -380,65 +312,3 @@ const step = new URLSearchParams(location.search).get("autostep");
 if (step === "quote") setTimeout(() => document.getElementById("btnQuote").click(), 1500);
 if (step === "plan")  setTimeout(() => document.getElementById("btnPlan").click(), 1500);
 fillChains();
-
-// ---------- ON-CHAIN EXECUTION (near-api-js → dripvault-dev.testnet) ----------
-const CONTRACT_ID = "dripvault-dev.testnet";
-let nearConnection = null, wallet = null, contract = null;
-
-async function initNear(){
-  if (!window.nearApi) { console.warn("near-api-js not loaded"); return false; }
-  nearConnection = nearApi.connect({
-    networkId: "testnet",
-    nodeUrl: "https://rpc.testnet.near.org",
-    walletUrl: "https://wallet.testnet.near.org",
-    helperUrl: "https://helper.testnet.near.org",
-    keyStore: new nearApi.keyStores.BrowserLocalStorageKeyStore(),
-  });
-  wallet = new nearApi.WalletConnection(nearConnection, "dripvault");
-  return true;
-}
-
-// connect wallet
-document.getElementById("btnConnect").onclick = async () => {
-  await initNear();
-  if (!wallet.isSignedIn()) {
-    await wallet.requestSignIn({ contractId: CONTRACT_ID, methodNames: ["set_schedule","record_drip","drips_done","get_leg"] });
-  }
-  updateWalletUI();
-};
-
-function updateWalletUI(){
-  const st = document.getElementById("walletStatus");
-  const btnExec = document.getElementById("btnExecDrip");
-  if (wallet && wallet.isSignedIn()) {
-    st.innerHTML = `✅ connected: <b>${wallet.getAccountId()}</b>`;
-    btnExec.style.display = "block";
-  } else {
-    st.textContent = "not connected";
-    btnExec.style.display = "none";
-  }
-}
-
-// execute drip on-chain — call record_drip() di kontrak
-document.getElementById("btnExecDrip").onclick = async () => {
-  const st = document.getElementById("chainStatus");
-  if (!wallet || !wallet.isSignedIn()) { st.textContent = "connect wallet dulu"; return; }
-  st.textContent = "executing drip on-chain…";
-  try {
-    const contract = new nearApi.Contract(wallet.account(), CONTRACT_ID, {
-      changeMethods: ["record_drip","set_schedule"],
-      viewMethods: ["drips_done","get_leg"],
-    });
-    // contoh call: record_drip(amount_in, expected, actual, sig)
-    const result = await contract.record_drip({
-      amountIn: "10000000",          // 10 USDC (6 decimals)
-      amountOutExpected: "26700000", // expected out (dummy, real: dari quote)
-      amountOutActual: null,
-      quoteSignature: "solver-sig-from-quote",
-    });
-    st.innerHTML = `✅ drip recorded on-chain: seq ${result}`;
-  } catch(e) { st.textContent = "ERROR: " + e.message; }
-};
-</script>
-</body>
-</html>
